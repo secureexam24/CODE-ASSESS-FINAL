@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +39,8 @@ const ExamInterface: React.FC<ExamInterfaceProps> = ({ exam, student, onComplete
   const [answers, setAnswers] = useState<Map<string, Answer>>(new Map());
   const [timeRemaining, setTimeRemaining] = useState(3600);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const isFullscreenRef = useRef(isFullscreen);
+  const pendingAutoSubmit = useRef(false);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const { toast } = useToast();
@@ -160,32 +162,65 @@ const ExamInterface: React.FC<ExamInterfaceProps> = ({ exam, student, onComplete
   }, [toast]);
 
   const handleFullscreenChange = useCallback(() => {
-    if (!document.fullscreenElement && isFullscreen) {
+    const isNowFullscreen = !!(
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).mozFullScreenElement ||
+      (document as any).msFullscreenElement
+    );
+    if (!isNowFullscreen && isFullscreenRef.current) {
+      setIsFullscreen(false);
       toast({
         title: "Fullscreen Exit Detected",
         description: "Your exam will be auto-submitted due to policy violation.",
         variant: "destructive"
       });
-      setTimeout(() => submitExam(true), 2000);
+      if (submissionId) {
+        setTimeout(() => submitExam(true), 2000);
+      } else {
+        pendingAutoSubmit.current = true;
+      }
     }
-  }, [isFullscreen]);
+  }, [toast, submissionId]);
+
+  const handleVisibilityChange = useCallback(() => {
+    if (document.hidden) {
+      toast({
+        title: "Tab Switch Detected",
+        description: "Please return to the exam immediately.",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
 
   useEffect(() => {
+    if (!submissionId) return; // Only add listeners if submissionId is set
+
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        toast({
-          title: "Tab Switch Detected",
-          description: "Please return to the exam immediately.",
-          variant: "destructive"
-        });
-      }
-    });
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [handleFullscreenChange]);
+  }, [handleFullscreenChange, handleVisibilityChange, submissionId]);
+
+  useEffect(() => {
+    if (submissionId && pendingAutoSubmit.current) {
+      setTimeout(() => submitExam(true), 2000);
+      pendingAutoSubmit.current = false;
+    }
+  }, [submissionId]);
+
+  useEffect(() => {
+    isFullscreenRef.current = isFullscreen;
+  }, [isFullscreen]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -216,13 +251,12 @@ const ExamInterface: React.FC<ExamInterfaceProps> = ({ exam, student, onComplete
     }
 
     // Save response to database
-    if (selectedAnswer) {
+    if (selectedAnswer !== undefined && selectedAnswer !== null) {
       try {
         const question = questions.find(q => q.id === questionId);
-        // Convert correct answer and selected answer to lowercase for DB compatibility
         const correctAnswerLower = question?.correctAnswer?.toLowerCase() || '';
-        const selectedAnswerLower = selectedAnswer.toLowerCase();
-        const isCorrect = question ? selectedAnswerLower === correctAnswerLower : false;
+        const selectedAnswerLower = selectedAnswer ? selectedAnswer.toLowerCase() : 'n';
+        const isCorrect = question && selectedAnswerLower && selectedAnswerLower !== 'n' ? selectedAnswerLower === correctAnswerLower : false;
 
         const { error } = await supabase
           .from('responses')
@@ -305,6 +339,28 @@ const ExamInterface: React.FC<ExamInterfaceProps> = ({ exam, student, onComplete
           }
         }
       });
+
+      // Export all unanswered questions as 'not-answered' to the database
+      const unansweredQuestions = questions.filter(q => !answers.has(q.id));
+      for (const question of unansweredQuestions) {
+        try {
+          const correctAnswerLower = question.correctAnswer?.toLowerCase() || '';
+          await supabase
+            .from('responses')
+            .upsert({
+              submission_id: submissionId,
+              question_id: question.id,
+              selected_answer: 'n',
+              correct_answer: correctAnswerLower,
+              is_correct: false,
+              time_taken_seconds: 0
+            }, {
+              onConflict: 'submission_id,question_id'
+            });
+        } catch (error) {
+          console.error('Error saving unanswered response:', error);
+        }
+      }
 
       // Calculate time taken in minutes
       const timeTakenMinutes = Math.floor((3600 - timeRemaining) / 60);
