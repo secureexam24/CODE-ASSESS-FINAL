@@ -132,10 +132,15 @@ const StudentRegistration: React.FC<StudentRegistrationProps> = ({ exam, onSucce
   };
 
   const formatTime = (timeString: string) => {
-    return new Date(timeString).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+    if (!timeString) return 'Not specified';
+    try {
+      return new Date(timeString).toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } catch (error) {
+      return 'Invalid time';
+    }
   };
 
   return (
@@ -150,7 +155,12 @@ const StudentRegistration: React.FC<StudentRegistrationProps> = ({ exam, onSucce
               <div className="flex items-center justify-center gap-4 text-sm text-blue-600">
                 <div className="flex items-center gap-1">
                   <Clock className="h-4 w-4" />
-                  <span>{formatTime(exam.startTime)} - {formatTime(exam.endTime)}</span>
+                  <span>
+                    {exam.startTime && exam.endTime 
+                      ? `${formatTime(exam.startTime)} - ${formatTime(exam.endTime)}`
+                      : 'Time not specified'
+                    }
+                  </span>
                 </div>
               </div>
             </div>
