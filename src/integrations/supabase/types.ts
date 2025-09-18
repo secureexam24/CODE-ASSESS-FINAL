@@ -13,11 +13,10 @@ export type Database = {
         Row: {
           access_code: string
           created_at: string | null
-          end_time: string | null
+          duration_minutes: number | null
           id: string
           name: string
-          start_time: string | null
-          status: Database["public"]["Enums"]["exam_status"] | null
+          status: string | null
           teacher_id: string
           topic: string
           updated_at: string | null
@@ -25,11 +24,10 @@ export type Database = {
         Insert: {
           access_code: string
           created_at?: string | null
-          end_time?: string | null
+          duration_minutes?: number | null
           id?: string
           name: string
-          start_time?: string | null
-          status?: Database["public"]["Enums"]["exam_status"] | null
+          status?: string | null
           teacher_id: string
           topic: string
           updated_at?: string | null
@@ -37,18 +35,17 @@ export type Database = {
         Update: {
           access_code?: string
           created_at?: string | null
-          end_time?: string | null
+          duration_minutes?: number | null
           id?: string
           name?: string
-          start_time?: string | null
-          status?: Database["public"]["Enums"]["exam_status"] | null
+          status?: string | null
           teacher_id?: string
           topic?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "exams_teacher_id_fkey"
+            foreignKeyName: "fk_exams_teacher_id"
             columns: ["teacher_id"]
             isOneToOne: false
             referencedRelation: "teachers"
@@ -66,10 +63,9 @@ export type Database = {
           option_b: string
           option_c: string
           option_d: string
-          question_order: number
+          question_order: number | null
           question_text: string
-          topic_tag: string
-          updated_at: string | null
+          topic_tag: string | null
         }
         Insert: {
           correct_answer: string
@@ -80,10 +76,9 @@ export type Database = {
           option_b: string
           option_c: string
           option_d: string
-          question_order: number
+          question_order?: number | null
           question_text: string
-          topic_tag: string
-          updated_at?: string | null
+          topic_tag?: string | null
         }
         Update: {
           correct_answer?: string
@@ -94,14 +89,13 @@ export type Database = {
           option_b?: string
           option_c?: string
           option_d?: string
-          question_order?: number
+          question_order?: number | null
           question_text?: string
-          topic_tag?: string
-          updated_at?: string | null
+          topic_tag?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "questions_exam_id_fkey"
+            foreignKeyName: "fk_questions_exam_id"
             columns: ["exam_id"]
             isOneToOne: false
             referencedRelation: "exams"
@@ -111,45 +105,39 @@ export type Database = {
       }
       responses: {
         Row: {
-          correct_answer: string
           created_at: string | null
           id: string
-          is_correct: boolean
+          is_correct: boolean | null
           question_id: string
           selected_answer: string | null
           submission_id: string
-          time_taken_seconds: number | null
         }
         Insert: {
-          correct_answer: string
           created_at?: string | null
           id?: string
-          is_correct: boolean
+          is_correct?: boolean | null
           question_id: string
           selected_answer?: string | null
           submission_id: string
-          time_taken_seconds?: number | null
         }
         Update: {
-          correct_answer?: string
           created_at?: string | null
           id?: string
-          is_correct?: boolean
+          is_correct?: boolean | null
           question_id?: string
           selected_answer?: string | null
           submission_id?: string
-          time_taken_seconds?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "responses_question_id_fkey"
+            foreignKeyName: "fk_responses_question_id"
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "responses_submission_id_fkey"
+            foreignKeyName: "fk_responses_submission_id"
             columns: ["submission_id"]
             isOneToOne: false
             referencedRelation: "submissions"
@@ -188,8 +176,8 @@ export type Database = {
           student_id: string
           submitted_at: string | null
           time_taken_minutes: number | null
-          total_questions: number
-          total_score: number
+          total_questions: number | null
+          total_score: number | null
         }
         Insert: {
           exam_id: string
@@ -197,8 +185,8 @@ export type Database = {
           student_id: string
           submitted_at?: string | null
           time_taken_minutes?: number | null
-          total_questions: number
-          total_score?: number
+          total_questions?: number | null
+          total_score?: number | null
         }
         Update: {
           exam_id?: string
@@ -206,19 +194,19 @@ export type Database = {
           student_id?: string
           submitted_at?: string | null
           time_taken_minutes?: number | null
-          total_questions?: number
-          total_score?: number
+          total_questions?: number | null
+          total_score?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "submissions_exam_id_fkey"
+            foreignKeyName: "fk_submissions_exam_id"
             columns: ["exam_id"]
             isOneToOne: false
             referencedRelation: "exams"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "submissions_student_id_fkey"
+            foreignKeyName: "fk_submissions_student_id"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
@@ -234,9 +222,7 @@ export type Database = {
           email: string
           id: string
           name: string
-          password_hash: string
-          phone: string | null
-          status: Database["public"]["Enums"]["teacher_status"] | null
+          password_hash: string | null
           updated_at: string | null
         }
         Insert: {
@@ -246,9 +232,7 @@ export type Database = {
           email: string
           id?: string
           name: string
-          password_hash: string
-          phone?: string | null
-          status?: Database["public"]["Enums"]["teacher_status"] | null
+          password_hash?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -258,9 +242,7 @@ export type Database = {
           email?: string
           id?: string
           name?: string
-          password_hash?: string
-          phone?: string | null
-          status?: Database["public"]["Enums"]["teacher_status"] | null
+          password_hash?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -273,8 +255,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      exam_status: "active" | "inactive"
-      teacher_status: "active" | "inactive" | "pending"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -386,12 +367,3 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-
-export const Constants = {
-  public: {
-    Enums: {
-      exam_status: ["active", "inactive"],
-      teacher_status: ["active", "inactive", "pending"],
-    },
-  },
-} as const

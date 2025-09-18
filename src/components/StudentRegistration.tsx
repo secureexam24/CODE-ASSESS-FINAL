@@ -131,18 +131,6 @@ const StudentRegistration: React.FC<StudentRegistrationProps> = ({ exam, onSucce
     }
   };
 
-  const formatTime = (timeString: string) => {
-    if (!timeString) return 'Not specified';
-    try {
-      return new Date(timeString).toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      });
-    } catch (error) {
-      return 'Invalid time';
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-lg space-y-6">
@@ -156,10 +144,7 @@ const StudentRegistration: React.FC<StudentRegistrationProps> = ({ exam, onSucce
                 <div className="flex items-center gap-1">
                   <Clock className="h-4 w-4" />
                   <span>
-                    {exam.startTime && exam.endTime 
-                      ? `${formatTime(exam.startTime)} - ${formatTime(exam.endTime)}`
-                      : 'Time not specified'
-                    }
+                    Duration: {exam.duration || 60} minutes
                   </span>
                 </div>
               </div>

@@ -98,8 +98,7 @@ const AccessCodeEntry: React.FC<AccessCodeEntryProps> = ({ onSuccess }) => {
         name: exam.name,
         topic: exam.topic,
         accessCode: exam.access_code,
-        startTime: exam.start_time || new Date().toISOString(),
-        endTime: exam.end_time || new Date(Date.now() + 3600000).toISOString(), // Default 1 hour
+        duration: exam.duration_minutes || 60, // Default 60 minutes
         status: exam.status
       };
 

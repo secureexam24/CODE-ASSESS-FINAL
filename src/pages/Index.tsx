@@ -19,8 +19,7 @@ export interface Exam {
   name: string;
   topic: string;
   accessCode: string;
-  startTime: string;
-  endTime: string;
+  duration?: number; // duration in minutes
   status: string;
 }
 

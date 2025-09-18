@@ -49,20 +49,9 @@ const ExamInterface: React.FC<ExamInterfaceProps> = ({ exam, student, onComplete
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        // Calculate exam duration and set timer
-        const now = new Date();
-        const examEndTime = new Date(exam.endTime);
-        const remainingSeconds = Math.max(0, Math.floor((examEndTime.getTime() - now.getTime()) / 1000));
-        
-        if (remainingSeconds <= 0) {
-          toast({
-            title: "Exam Ended",
-            description: "This exam has already ended.",
-            variant: "destructive"
-          });
-          onComplete();
-          return;
-        }
+        // Set timer based on exam duration (default 60 minutes if not specified)
+        const durationMinutes = exam.duration || 60;
+        const remainingSeconds = durationMinutes * 60;
         
         setTimeRemaining(remainingSeconds);
 
@@ -380,9 +369,8 @@ const ExamInterface: React.FC<ExamInterfaceProps> = ({ exam, student, onComplete
       }
 
       // Calculate time taken in minutes
-      const examStartTime = new Date(exam.startTime);
-      const currentTime = new Date();
-      const timeTakenMinutes = Math.floor((currentTime.getTime() - examStartTime.getTime()) / (1000 * 60));
+      const totalDurationMinutes = exam.duration || 60;
+      const timeTakenMinutes = totalDurationMinutes - Math.floor(timeRemaining / 60);
 
       // Update submission with final score and time
       const { error: updateError } = await supabase
